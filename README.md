@@ -37,13 +37,14 @@ import(
     "net/http" 
     _ "github.com/go-sql-driver/mysql" 
     mysqlPool "github.com/fecshopsoft/golang-db/mysql"
+    testMysql "github.com/fecshopsoft/golang-db/test/mysql"
 )
 
 func mysqlDBPool() *mysqlPool.SQLConnPool{
     host := `127.0.0.1:3306`
     database := `go_test`
     user := `root`
-    password := `xxxx`
+    password := `xxx`
     charset := `utf8`
     // 用于设置最大打开的连接数
     maxOpenConns := 200
@@ -60,117 +61,24 @@ func main() {
     {
         // 查询部分
         v2.GET("/users", func(c *gin.Context) {
-            data := List(mysqlDB);
+            data := testMysql.List(mysqlDB);
             c.JSON(http.StatusOK, data)
         })
         v2.POST("/users", func(c *gin.Context) {
-            data := AddOne(mysqlDB, c);
+            data := testMysql.AddOne(mysqlDB, c);
             c.JSON(http.StatusOK, data)
         })
         v2.PATCH("/users/:id", func(c *gin.Context) {
-            data := UpdateById(mysqlDB, c);
+            data := testMysql.UpdateById(mysqlDB, c);
             c.JSON(http.StatusOK, data)
         })
         v2.DELETE("/users/:id", func(c *gin.Context) {
-            data := DeleteById(mysqlDB, c);
+            data := testMysql.DeleteById(mysqlDB, c);
             c.JSON(http.StatusOK, data)
         })
     }
     r.Run("120.24.37.249:3000") // 这里改成您的ip和端口
 }
-
-```
-
-
-user.go
-
-```
-package main
-
-import (    
-    "fmt"
-    "strconv"
-    "github.com/gin-gonic/gin"  
-    mysqlPool "github.com/hopehook/golang-db/mysql"
-)
-
-type UserType struct {
-    Id      int    `form:"id" json:"id" `
-    Name    string `form:"name" json:"name" binding:"required"`
-    Age     int    `form:"age" json:"age" binding:"required"`
-}
-
-func List(mysqlDB *mysqlPool.SQLConnPool) gin.H{
-    body := make(gin.H) 
-    rows, err := mysqlDB.Query("SELECT * From user")
-    if err != nil {
-        fmt.Printf("%s\r\n","mysql query error")
-    }
-    //fmt.Printf("%v\r\n",rows)
-    var dbdata []gin.H
-    if rows != nil {
-        for _, row := range rows {
-            dbdata = append(dbdata, gin.H(row))
-        }
-    }
-    body["status"] = 200
-    body["data"] = dbdata
-    return body
-}
-
-func AddOne(mysqlDB *mysqlPool.SQLConnPool, c *gin.Context) gin.H{
-    body := make(gin.H) 
-    // 保存
-    var json UserType
-    if err := c.ShouldBindJSON(&json); err == nil {
-        lastId, err := mysqlDB.Update("INSERT INTO user (`name`, `age`) VALUES( ?, ? )", json.Name, json.Age) // ? = placeholder
-        if err != nil {
-            panic(err.Error()) // proper error handling instead of panic in your app
-        }
-        body["updateCount"] = lastId
-        body["status"] = "success"
-    } else {
-        body["status"] = err.Error()
-    }
-    return  body
-}
-
-func UpdateById(mysqlDB *mysqlPool.SQLConnPool, c *gin.Context) gin.H{
-    userId, err := strconv.Atoi(c.Param("id"))
-    if err != nil {
-        panic("userId can not empty")  
-    }
-    body := make(gin.H) 
-    // 保存
-    var json UserType
-    if err := c.ShouldBindJSON(&json); err == nil {
-        // 进行数据库操作
-        affect, err := mysqlDB.Update("update user set `name` = ? , `age` = ? where `id` = ? ", json.Name, json.Age, userId) // ? = placeholder
-        if err != nil {
-            panic(err.Error()) 
-        }
-        body["updateCount"] = affect
-        body["status"] = "success"
-    } else {
-        body["status"] = err.Error()
-    }
-    return  body
-}
-
-func DeleteById(mysqlDB *mysqlPool.SQLConnPool, c *gin.Context) gin.H{
-    userId, err := strconv.Atoi(c.Param("id"))
-    if err != nil {
-        panic("userId can not empty")  
-    }
-    body := make(gin.H) 
-    affect, err := mysqlDB.Update("delete from user where `id` = ?", userId) // ? = placeholder
-    if err != nil {
-        panic(err.Error()) // proper error handling instead of panic in your app
-    }
-    body["deleteCount"] = affect
-    return  body
-}
-
 ```
 
 3.2 数据库go_test插入数据

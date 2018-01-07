@@ -4,7 +4,7 @@ import (
     "fmt"
     "strconv"
     "github.com/gin-gonic/gin"  
-    mysqlPool "github.com/hopehook/golang-db/mysql"
+    mysqlPool "github.com/fecshopsoft/golang-db/mysql"
 )
 
 type UserType struct {
